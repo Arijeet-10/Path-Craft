@@ -56,9 +56,13 @@ const App = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
+  const API_BASE_URL = "https://skill-up-react-website-backend.onrender.com";
     try {
-      const response = await fetch("http://localhost:5000/api/career-profile", {
+      //  For local host: 
+      // const response = await fetch("http://localhost:5000/api/career-profile", {
+
+      // For Render : 
+      const response = await fetch(`${API_BASE_URL}/api/career-profile`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
