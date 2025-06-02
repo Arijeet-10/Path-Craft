@@ -69,79 +69,90 @@ def translate_text(text, target_language):
         return translations[target_language][text]
     return text  # Return original if translation not found
 
-@app.route('/')
-def index():
-    """Render the main input page."""
-    return render_template('index.html')
+def get_recommendations(data):
+    role = data.get('role', '').strip().lower()
+    skills = [skill.strip().lower() for skill in data.get('skills', '').split(',') if skill.strip()] if data.get('skills') else []
+    skill_gaps = data.get('skill_gaps', '').strip().lower()
+    career_ambitions = data.get('career_ambitions', '').strip().lower()
+    language = data.get('language', '').strip().lower()
+
+    recommendations = {"courses": [], "videos": [], "jobs": [], "roadmap": []}
+    combined_inputs_string = ' '.join(skills + [role, skill_gaps, career_ambitions]).strip()
+
+    # Create regex patterns for all resource keys
+    resource_patterns = {key: re.compile(r'\b' + re.escape(key) + r'\b') for key in resources_db}
+
+    # Search resources based on input words/phrases
+    for resource_key, pattern in resource_patterns.items():
+        if pattern.search(combined_inputs_string):
+            recommendations["courses"].extend(resources_db[resource_key].get("courses", []))
+            recommendations["videos"].extend(resources_db[resource_key].get("videos", []))
+            recommendations["roadmap"].extend(resources_db[resource_key].get("roadmap", []))
+
+    # Search job openings based on exact matches of job titles
+    job_title_patterns = {key: re.compile(r'\b' + re.escape(key) + r'\b') for key in job_titles}
+    for job_title, pattern in job_title_patterns.items():
+        if pattern.search(combined_inputs_string):
+            recommendations["jobs"].extend(job_openings.get(job_title, []))
+
+    # Remove duplicates
+    recommendations["courses"] = list({v["name"]: v for v in recommendations["courses"]}.values())
+    recommendations["videos"] = list({v["name"]: v for v in recommendations["videos"]}.values())
+    recommendations["jobs"] = list({v["title"]: v for v in recommendations["jobs"]}.values())
+    recommendations["roadmap"] = list({v["step"]: v for v in recommendations["roadmap"]}.values())
+
+    # Translate content
+    for course in recommendations["courses"]:
+        course["name"] = translate_text(course["name"], language)
+    for video in recommendations["videos"]:
+        video["name"] = translate_text(video["name"], language)
+    for job in recommendations["jobs"]:
+        job["title"] = translate_text(job["title"], language)
+    for step in recommendations["roadmap"]:
+        step["step"] = translate_text(step["step"], language)
+        step["description"] = translate_text(step["description"], language)
+
+    # Add a message
+    if language:
+        recommendations['message'] = f"{translate_text('Resources tailored for you in', language)} {language}!"
+    else:
+        recommendations['message'] = "Resources tailored for you!"
+
+    return recommendations
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Predict resources based on user input."""
     try:
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
-
-        role = data.get('role', '').strip().lower()
-        skills = [skill.strip().lower() for skill in data.get('skills', '').split(',') if skill.strip()] if data.get('skills') else []
-        skill_gaps = data.get('skill_gaps', '').strip().lower()
-        career_ambitions = data.get('career_ambitions', '').strip().lower()
-        language = data.get('language', '').strip().lower()
-
-        # Combine inputs to determine resources
-        recommendations = {"courses": [], "videos": [], "jobs": [], "roadmap": []}
-        combined_inputs_string = ' '.join(skills + [role, skill_gaps, career_ambitions]).strip()
-
-        # Create regex patterns for all resource keys
-        resource_patterns = {key: re.compile(r'\b' + re.escape(key) + r'\b') for key in resources_db}
-
-        # Search resources based on input words/phrases
-        for resource_key, pattern in resource_patterns.items():
-            if pattern.search(combined_inputs_string):
-                recommendations["courses"].extend(resources_db[resource_key].get("courses", []))
-                recommendations["videos"].extend(resources_db[resource_key].get("videos", []))
-                recommendations["roadmap"].extend(resources_db[resource_key].get("roadmap", []))
-
-        # Search job openings based on exact matches of job titles
-        job_title_patterns = {key: re.compile(r'\b' + re.escape(key) + r'\b') for key in job_titles}
-        for job_title, pattern in job_title_patterns.items():
-            if pattern.search(combined_inputs_string):
-                recommendations["jobs"].extend(job_openings.get(job_title, []))
-
-        # Remove duplicates
-        recommendations["courses"] = list({v["name"]: v for v in recommendations["courses"]}.values())
-        recommendations["videos"] = list({v["name"]: v for v in recommendations["videos"]}.values())
-        recommendations["jobs"] = list({v["title"]: v for v in recommendations["jobs"]}.values())
-        recommendations["roadmap"] = list({v["step"]: v for v in recommendations["roadmap"]}.values())
-
-        # Translate content
-        for course in recommendations["courses"]:
-            course["name"] = translate_text(course["name"], language)
-        for video in recommendations["videos"]:
-            video["name"] = translate_text(video["name"], language)
-        for job in recommendations["jobs"]:
-            job["title"] = translate_text(job["title"], language)
-        for step in recommendations["roadmap"]:
-            step["step"] = translate_text(step["step"], language)
-            step["description"] = translate_text(step["description"], language)
-
-        # Add a message
-        if language:
-            recommendations['message'] = f"{translate_text('Resources tailored for you in', language)} {language}!"
-        else:
-            recommendations['message'] = "Resources tailored for you!"
-
+        
+        recommendations = get_recommendations(data)
         return jsonify(recommendations)
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/career-profile', methods=['POST'])
+def career_profile():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        recommendations = get_recommendations(data)
+        return jsonify(recommendations)
+
+    except Exception as e:
+        logging.error(f"Error in career-profile endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-app = Flask(__name__)
-CORS(app)  # Allow React to access Flask APIs
+# Allow React to access Flask APIs
 
 @app.route("/api/greet", methods=["GET"])
 def greet():
