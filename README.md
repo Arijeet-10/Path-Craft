@@ -30,6 +30,8 @@ Path Craft is a sophisticated full-stack web application that leverages intellig
 - 📱 **Responsive Design** - Seamless mobile and desktop experience
 - ⚡ **Real-time Updates** - Live job alerts and content updates
 
+## Check it out here: https://skill-up-react-website.onrender.com/
+
 ## 🛠️ Built With
 
 <div align="center">
