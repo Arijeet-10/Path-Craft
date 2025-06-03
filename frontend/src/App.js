@@ -137,12 +137,12 @@ const App = () => {
 
       {/* Floating Sidebar */}
       <nav
-        className={`fixed left-4 top-4 bottom-4 w-80 rounded-3xl shadow-2xl transition-transform duration-300 ease-in-out z-50 lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-[calc(100%+2rem)] lg:translate-x-0" // Adjusted for smoother out transition
+        className={`fixed left-0 top-0 bottom-0 w-80 shadow-2xl transition-transform duration-300 ease-in-out z-50 lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         } ${
           darkMode
-            ? "bg-gradient-to-b from-gray-900/95 via-slate-800/95 to-gray-900/95 backdrop-blur-xl border border-gray-700/50"
-            : "bg-gradient-to-b from-white/95 via-gray-50/95 to-white/95 backdrop-blur-xl border border-white/20 shadow-2xl"
+            ? "bg-gradient-to-b from-gray-900 via-slate-800 to-gray-900"
+            : "bg-gradient-to-b from-white via-gray-50 to-white shadow-2xl"
         }`}
       >
         <div className="p-8 h-full flex flex-col">
@@ -235,12 +235,13 @@ const App = () => {
         {/* Floating Header */}
         {/* On lg screens, left-[23.5rem] aligns header content with main section content */}
         <header
-          className={`fixed top-4 right-4 left-4 lg:left-[23.5rem] rounded-3xl shadow-lg z-30 transition-all duration-500 ${
-            darkMode
-              ? "bg-gray-900/80 backdrop-blur-xl border border-gray-700/50"
-              : "bg-white/80 backdrop-blur-xl border border-white/20"
-          }`}
-        >
+  className={`fixed top-0 right-0 left-0 lg:left-[19.5rem] shadow-lg z-30 transition-all duration-500 ${
+    darkMode
+      ? "bg-gray-900/80 backdrop-blur-xl border border-gray-700/50"
+      : "bg-white/80 backdrop-blur-xl border border-white/20"
+  }`}
+>
+
           <div className="flex items-center justify-between px-6 py-4">
             <button
               onClick={() => setSidebarOpen(true)}
